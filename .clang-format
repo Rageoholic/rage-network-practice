@@ -1,0 +1,9 @@
+AccessModifierOffset: '0'
+AlignTrailingComments: 'true'
+AllowAllParametersOfDeclarationOnNextLine: 'true'
+AllowShortBlocksOnASingleLine: 'true'
+AllowShortCaseLabelsOnASingleLine: 'true'
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: 'true'
+BreakBeforeBinaryOperators: All
+BreakBeforeBraces: Allman
