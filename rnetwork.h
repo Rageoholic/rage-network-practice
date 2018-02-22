@@ -1,6 +1,8 @@
 #ifndef RNETWORK_H
 #define RNETWORK_H
 
+#include "rdef.h"
+
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -20,7 +22,7 @@ int GetAddrInfo(int aiFlags, int aiSocktype, const char *port,
 
 const char *GaiError(int errcode);
 
-fd BindToSocket(AddrInfo *a);
+fd BindToAddrInfo(AddrInfo *a);
 
 fd ConnectToSocket(AddrInfo *a);
 

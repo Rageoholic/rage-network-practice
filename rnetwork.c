@@ -22,7 +22,7 @@ void *GetInAddr(SockAddr *sa)
   }
 }
 
-int GetAddrInfo(int aiFlags, int aiSocktype, const char *port,
+int GetAddrInfo(const int aiFlags, const int aiSocktype, const char *port,
                 const char *name, AddrInfo **res)
 {
   AddrInfo hints
@@ -41,31 +41,33 @@ AddrInfo *NextAddrInfo(AddrInfo *a)
   return a->ai_next;
 }
 
-fd BindToSocket(AddrInfo *a)
+fd BindToAddrInfo(AddrInfo *a)
 {
-  for (AddrInfo *p = a; p != NULL; p = NextAddrInfo(p)) {
+  for(AddrInfo *p = a; p != NULL; p = NextAddrInfo(p))
+  {
     int sockfd;
-    if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
+    if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
     {
       perror("socket");
       continue;
     }
-
     int yes = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+    if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
     {
       perror("setsockopt");
       exit(1);
     }
 
-    if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1)
+    if(bind(sockfd, p->ai_addr, p->ai_addrlen) == -1)
     {
       close(sockfd);
       perror("bind");
       continue;
     }
+
     return sockfd;
   }
+  /* Error case */
   return -1;
 }
 

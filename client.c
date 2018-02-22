@@ -5,7 +5,7 @@ int main(int argc, char *argv[])
 {
   if(argc != 3)
   {
-    fprintf(stderr, "usage: %s name port\n", argv[1]);
+    fprintf(stderr, "usage: %s name port\n", argv[0]);
     return 1;
   }
   int rv;

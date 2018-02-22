@@ -1,13 +1,14 @@
 #include "rnetwork.h"
 #include "rprocess.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 
-void SigchildHandler(int s)
+local void SigchildHandler(int s)
 {
   (void)s;
   int saved_errno = errno;
@@ -29,27 +30,35 @@ int main(int argc, char *argv[])
   AddrInfo *servInfo;
 
   int rv;
-  if ((rv = GetAddrInfo(AI_PASSIVE, SOCK_STREAM, argv[1], NULL,
-                        &servInfo))
+  if ((rv = GetAddrInfo(AI_PASSIVE, SOCK_STREAM, argv[1], NULL, &servInfo))
       != 0)
   {
     fprintf(stderr, "%s\n", GaiError(rv));
     return 2;
   }
 
-  fd sockfd = BindToSocket(servInfo);
+  fd sockfd = BindToAddrInfo(servInfo);
+  if(sockfd == -1)
+  {
+    perror("BindToAddrInfo");
+    return 2;
+  }
+
   if (SetSignalHandler(SIGCHLD, SigchildHandler, SA_RESTART) == -1)
   {
     perror("SetSignalHandler");
     return 1;
   }
+
   FreeAddrInfo(servInfo);
-  puts("server: Waiting for connections");
 
   while (true) {
-    SockAddrStorage theirAddr = {0};
-    socklen_t sinSize = sizeof(theirAddr);
-    fd connfd = AcceptConnection(sockfd, (SockAddr *) &theirAddr, sinSize);
+    /* SockAddrStorage theirAddr = {0}; */
+    /* socklen_t sinSize = sizeof(theirAddr); */
+    fd connfd = AcceptConnection(sockfd, NULL, 0);
+    /* fd connfd = AcceptConnection(sockfd, (SockAddr *)&theirAddr, sinSize); */
+
+    assert(connfd != -1);
 
     if (connfd == -1)
     {
@@ -57,9 +66,9 @@ int main(int argc, char *argv[])
       continue;
     }
 
-    char s[INET6_ADDRSTRLEN];
+    /* char s[INET6_ADDRSTRLEN]; */
 
-    printf("server: connected to %s\n", SockAddrToStr(&theirAddr, s));
+    /* printf("server: connected to %s\n", SockAddrToStr(&theirAddr, s)); */
     if (!ForkProcess())
     {
       CloseSocket(sockfd);

@@ -5,15 +5,6 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 
-void sigchild_handler(int s)
-{
-  (void)s;
-  int saved_errno = errno;
-  while (waitpid(-1, NULL, WNOHANG) > 0)
-    ;
-
-  errno = saved_errno;
-}
 
 int main(int argc, char *argv[])
 {
