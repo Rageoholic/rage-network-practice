@@ -8,9 +8,13 @@ typedef enum
   SIGNAL_CHILD
 } SignalType;
 
-typedef int SignalFlags;
+typedef int SignalFlags;	/* Set of signal flags for
+				   program. See defines with
+				   SignalFlags */
 
-#define SF_RESTART 0x01
+#define SF_RESTART 0x01		/* SignalFlags: Functions will not
+				   fail with EINTR if they would, they
+				   will retry */
 
 typedef const int PID;
 

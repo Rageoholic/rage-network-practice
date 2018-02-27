@@ -6,13 +6,16 @@ DEPS = $(shell find . -name "*.d")
 
 ifeq ($(mode),release)
 	CFLAGS := -O2 -g $(CFLAGS) -DNDEBUG
+	LDFLAGS := -O2 -g
 else
 ifeq ($(mode),debug)
 
-	CFLAGS := -O  -g $(CFLAGS) -DDEBUG
+	CFLAGS := -O0  -g $(CFLAGS) -DDEBUG
+	LDFLAGS := -O0 -g
 else
 	mode = debugOpt
 	CFLAGS := -g -O2 $(CFLAGS) -DDEBUG
+	LDFLAGS := -O2 -g
 endif
 endif
 

@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
   AddrInfo *tAddrInfo;
 
   int rv;
-  if ((rv = GetAddrInfo(0, TCP, NULL, argv[1], &tAddrInfo))
+  if ((rv = GetAddrInfo(0, TCP, argv[1], NULL, &tAddrInfo))
       != 0)
   {
     fprintf(stderr, "%s\n", GaiError(rv));
@@ -39,5 +39,5 @@ int main(int argc, char *argv[])
     printf("\t%s: %s\n", ipver, GetIpStr(p, ipBuffer, sizeof(ipBuffer)));
   }
 
-  FreeAddrInfo(tAddrInfo);
+  DestroyAddrInfo(tAddrInfo);
 }

@@ -1,13 +1,27 @@
 #ifndef RDEF_H
 #define RDEF_H
 
-typedef const int FD;
-
 #include <stdint.h>
 #include <stddef.h>
 
-#define local static
+/* Types and constants */
 
-#define ignore (void)
+typedef const int FD;
+
+
+
+#define local static		/* Function is local to the file */
+
+#define ignore (void)		/* Ignore this variable. Turns off
+				   warnings */
+
+typedef int ReadFlags;		/* Set of flags for reading files. See
+				   DEFINEs with ReadFlags */
+
+#define READ_PEEK 0x01		/* ReadFlags: Don't actually advance
+				   the buffer */
+
+#define READ_NO_BLOCK 0x02 	/* ReadFlags: Don't block on reading
+				   data from the descriptor */
 
 #endif

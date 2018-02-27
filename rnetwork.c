@@ -10,6 +10,20 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+local int ReadFlagsToRecvFlags(ReadFlags flags)
+{
+  int recvFlags = 0;
+  if(flags & READ_PEEK)
+  {
+    recvFlags |= MSG_PEEK;
+  }
+  if(flags & READ_NO_BLOCK)
+  {
+    recvFlags |= MSG_DONTWAIT;
+  }
+  return recvFlags;
+}
+
 local int RoleToAIFlags(Role role)
 {
   if(role == SERVER)
@@ -21,12 +35,24 @@ local int RoleToAIFlags(Role role)
   }
 }
 
+local int ConnTypeToSockType(ConnType connType)
+{
+  if(connType == TCP)
+  {
+    return SOCK_STREAM;
+  }else
+  {
+    return SOCK_DGRAM;
+  }
+}
+
+
 Socket CreateTCPServerSocket(const char *port)
 {
   AddrInfo *servInfo;
 
   int rv;
-  if ((rv = GetAddrInfo(SERVER, TCP,  port, NULL, &servInfo))
+  if ((rv = GetAddrInfo(SERVER, TCP,  NULL, port, &servInfo))
       != 0)
   {
     fprintf(stderr, "%s\n", GaiError(rv));
@@ -34,7 +60,7 @@ Socket CreateTCPServerSocket(const char *port)
   }
 
   Socket sockfd = BindToAddrInfo(servInfo, 10);
-  FreeAddrInfo(servInfo);
+  DestroyAddrInfo(servInfo);
   return sockfd;
 }
 
@@ -52,7 +78,7 @@ Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **give
     servInfo = givenServInfo;
   }
   int rv;
-  if ((rv = GetAddrInfo(SERVER, TCP,  port, name, servInfo))
+  if ((rv = GetAddrInfo(SERVER, TCP,  name, port, servInfo))
       != 0)
   {
     fprintf(stderr, "%s\n", GaiError(rv));
@@ -62,21 +88,11 @@ Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **give
   Socket sockfd = ConnectToSocket(*servInfo);
   if(altServInfo != NULL)
   {
-    FreeAddrInfo(altServInfo);
+    DestroyAddrInfo(altServInfo);
   }
   return sockfd;
 }
 
-local int ConnTypeToSockType(ConnType connType)
-{
-  if(connType == TCP)
-  {
-    return SOCK_STREAM;
-  }else
-  {
-    return SOCK_DGRAM;
-  }
-}
 
 void *GetInAddr(SockAddr *sa)
 {
@@ -90,8 +106,8 @@ void *GetInAddr(SockAddr *sa)
   }
 }
 
-int GetAddrInfo(Role role, ConnType connType, const char *port,
-                const char *name, AddrInfo **res)
+int GetAddrInfo(Role role, ConnType connType, const char *name,
+                const char *port, AddrInfo **res)
 {
   AddrInfo hints = {.ai_flags = RoleToAIFlags(role),
                     .ai_family = AF_UNSPEC,
@@ -191,16 +207,22 @@ const char *GetIpStr(AddrInfo *a, char *ipstr, size_t ipstrLength)
   return inet_ntop(a->ai_family, addr, ipstr, ipstrLength);
 }
 
-void FreeAddrInfo(AddrInfo *a)
+void DestroyAddrInfo(AddrInfo *a)
 {
   freeaddrinfo(a);
 }
 
 Socket AcceptConnection(Socket sockfd, SockAddr **theirAddr)
 {
-  *theirAddr = calloc(1,sizeof(SockAddr));
+  SockAddr *lTheirAddr = NULL;
+
+  if(theirAddr != NULL)
+  {
+    *theirAddr = malloc(sizeof(SockAddr));
+    lTheirAddr = *theirAddr;
+  }
   socklen_t addrLen = sizeof(SockAddr);
-  return accept(sockfd, (struct sockaddr *)*theirAddr, &addrLen);
+  return accept(sockfd, (struct sockaddr *)lTheirAddr, &addrLen);
 }
 
 const char *SockAddrToStr(SockAddr *addr, char *dst)
@@ -209,17 +231,22 @@ const char *SockAddrToStr(SockAddr *addr, char *dst)
                    sizeof(*addr));
 }
 
-int CloseSocket(Socket sockfd)
+int DestroySocket(Socket sockfd)
 {
   return close(sockfd);
 }
 
-Length SendData(Socket sockfd, const void *buf, size_t len, int flags)
+Length SendData(Socket sockfd, const void *buf, size_t len)
 {
-  return send(sockfd, buf, len, flags);
+  return send(sockfd, buf, len, 0);
 }
 
-Length ReadData(Socket sockfd, void *buf, size_t len, int flags)
+Length RecvData(Socket sockfd, void *buf, size_t len, ReadFlags flags)
 {
-  return recv(sockfd, buf, len, flags);
+  return recv(sockfd, buf, len, ReadFlagsToRecvFlags(flags));
+}
+
+void DestroySockAddr(SockAddr *s)
+{
+  free(s);
 }

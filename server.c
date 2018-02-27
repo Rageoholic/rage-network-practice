@@ -59,6 +59,8 @@ int main(int argc, char *argv[])
 
 
     printf("server: connected to %s\n", SockAddrToStr(theirAddr, s));
+
+    DestroySockAddr(theirAddr);
     PID returnPid = ForkProcess();
     if (returnPid == -1)
     {
@@ -66,16 +68,17 @@ int main(int argc, char *argv[])
     }
     else if(!returnPid)
     {
-      CloseSocket(sockfd);	/* Forked process doesn't care about
+      DestroySocket(sockfd);	/* Forked process doesn't care about
 				   new connections */
-      if (SendData(connfd, "Hello, world!", 13, 0) == -1)
+      if (SendData(connfd, "Hello, world!", 13) == -1)
       {
         perror("send");
       }
-      CloseSocket(connfd);
+      DestroySocket(connfd);
       exit(0);
     }
-    CloseSocket(connfd); 	/* Parent doesn't give two shits about the connection */
+    DestroySocket(connfd); 	/* Parent doesn't give two shits about
+				   the external connection */
   }
   return 0;
 }

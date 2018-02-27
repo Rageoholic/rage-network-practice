@@ -21,11 +21,11 @@ int main(int argc, char *argv[])
   char ipbuf[MAX_ADDR_STR_LEN];
   printf("client: connecting to %s\n", GetIpStr(servInfo, ipbuf, sizeof(ipbuf)));
 
-  FreeAddrInfo(servInfo);
+  DestroyAddrInfo(servInfo);
 
   char buf[1000];
 
-  Length numbytes = ReadData(connfd, buf, sizeof(buf) -1, 0);
+  Length numbytes = RecvData(connfd, buf, sizeof(buf) -1, 0);
 
   if(numbytes == -1)
   {
@@ -37,5 +37,5 @@ int main(int argc, char *argv[])
 
   printf("client: recieved \"%s\"\n", buf);
 
-  CloseSocket(connfd);
+  DestroySocket(connfd);
 }
