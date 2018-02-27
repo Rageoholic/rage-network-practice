@@ -1,9 +1,7 @@
-CC := clang
-
 PROGS = showip server client
 
-WARNINGS = -Wall -Wextra -pedantic -Werror -Wno-error=unused-variable -Wno-error=unused-parameter -Wno-missing-field-initializers
-CFLAGS = $(WARNINGS)
+WARNINGS = -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-parameter -Wno-missing-field-initializers -Wno-ignored-qualifiers
+CFLAGS = $(WARNINGS) --std=c11
 DEPS = $(shell find . -name "*.d")
 
 ifeq ($(mode),release)

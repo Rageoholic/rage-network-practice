@@ -1,4 +1,4 @@
-#define _XOPEN_SOURCE
+#define _XOPEN_SOURCE 1000
 
 #include "rprocess.h"
 
@@ -6,14 +6,35 @@
 #include <stddef.h>
 #include <unistd.h>
 
-int SetSignalHandler(int signum, void (*Handler)(int), int saFlags)
+local int SignalTypeToSignal(signalType sig)
+{
+  switch(sig)
+  {
+  case SIGNAL_CHILD:
+    return SIGCHLD;
+  }
+  return -1;
+}
+
+local int SignalFlagsToSaFlags(signalFlags sigType)
+{
+  int saFlags = 0;
+  if(sigType && SF_RESTART)
+  {
+    saFlags |= SA_RESTART;
+  }
+  return saFlags;
+}
+
+int SetSignalHandler(signalType signum, signalHandler handler,
+                     signalFlags saFlags)
 {
   struct sigaction sa = {0};
 
-  sa.sa_handler = Handler;
-  sa.sa_flags = saFlags;
+  sa.sa_handler = handler;
+  sa.sa_flags = SignalFlagsToSaFlags(saFlags);
 
-  return sigaction(signum, &sa, NULL);
+  return sigaction(SignalTypeToSignal(signum), &sa, NULL);
 }
 
 pid ForkProcess()

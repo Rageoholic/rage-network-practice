@@ -22,11 +22,11 @@ void *GetInAddr(SockAddr *sa)
   }
 }
 
-int GetAddrInfo(const int aiFlags, const int aiSocktype, const char *port,
+int GetAddrInfo(const int aiFlags, const int aiSocktype, const int aiFamily, const char *port,
                 const char *name, AddrInfo **res)
 {
   AddrInfo hints
-      = {.ai_flags = aiFlags, .ai_family = AF_UNSPEC, .ai_socktype = aiSocktype};
+      = {.ai_flags = aiFlags, .ai_family = aiFamily, .ai_socktype = aiSocktype};
 
   return getaddrinfo(name, port, &hints, res);
 }
@@ -41,7 +41,7 @@ AddrInfo *NextAddrInfo(AddrInfo *a)
   return a->ai_next;
 }
 
-fd BindToAddrInfo(AddrInfo *a)
+fd BindToAddrInfo(AddrInfo *a, int connBacklog)
 {
   for(AddrInfo *p = a; p != NULL; p = NextAddrInfo(p))
   {
@@ -65,6 +65,12 @@ fd BindToAddrInfo(AddrInfo *a)
       continue;
     }
 
+    if(listen(sockfd, connBacklog) == -1)
+    {
+      perror("listen");
+      close(sockfd);
+      continue;
+    }
     return sockfd;
   }
   /* Error case */
@@ -77,7 +83,7 @@ fd ConnectToSocket(AddrInfo *a)
     int sockfd;
     if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
     {
-      perror("ConnectToSocket");
+      perror("ConnectToSocket: socket");
       continue;
     }
 
@@ -85,6 +91,7 @@ fd ConnectToSocket(AddrInfo *a)
     {
       close(sockfd);
       perror("ConnectToSocket: connect");
+      continue;
     }
 
     return sockfd;
