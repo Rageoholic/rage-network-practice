@@ -1,7 +1,7 @@
 #ifndef RPROCESS_H
 #define RPROCESS_H
 
-#include "rdef.h"
+#include "def.h"
 
 typedef enum
 {

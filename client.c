@@ -1,4 +1,4 @@
-#include "rnetwork.h"
+#include "rutils/network.h"
 #include <stdio.h>
 
 int main(int argc, char *argv[])
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 
   char buf[1000];
 
-  Length numbytes = RecvData(connfd, buf, sizeof(buf) -1, 0);
+  Length numbytes = TCPRecvData(connfd, buf, sizeof(buf) -1, 0);
 
   if(numbytes == -1)
   {

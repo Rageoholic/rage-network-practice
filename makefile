@@ -1,7 +1,11 @@
-PROGS = showip server client
+PROGS = showip server client listener
+
+_RUTILS = network process
+RUTILS_DIR= rutils/
+RUTILS = $(patsubst %,$(RUTILS_DIR)%.o, $(_RUTILS))
 
 WARNINGS = -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-parameter -Wno-missing-field-initializers -Wno-ignored-qualifiers
-CFLAGS = $(WARNINGS) --std=c11
+CFLAGS = $(WARNINGS) --std=c11 -MD -MP
 DEPS = $(shell find . -name "*.d")
 
 ifeq ($(mode),release)
@@ -19,16 +23,21 @@ else
 endif
 endif
 
-
 all: $(PROGS)
 
 -include $(DEPS)
 
-showip: showip.o rnetwork.o
+rutils.a: $(RUTILS)
+	$(AR) rcs $@ $^
+	ranlib $@
 
-server: server.o rnetwork.o rprocess.o
+showip: showip.o rutils.a
 
-client: client.o rnetwork.o
+server: server.o rutils.a
+
+client: client.o rutils.a
+
+listener: listener.o rutils.a
 
 %.o: %.c
 	$(CC) -c $< -o  $@ $(CFLAGS) -MD -MP
@@ -36,4 +45,7 @@ client: client.o rnetwork.o
 clean:
 	-$(RM) -f *.o *.d server
 
-.PHONY: all clean
+info:
+	@echo building $(PROGS) $(RUTILS)
+
+.PHONY: all clean info

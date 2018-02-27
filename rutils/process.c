@@ -1,6 +1,6 @@
 #define _XOPEN_SOURCE 1000
 
-#include "rprocess.h"
+#include "process.h"
 
 #include <signal.h>
 #include <stddef.h>

@@ -1,5 +1,5 @@
-#include "rnetwork.h"
-#include "rprocess.h"
+#include "rutils/network.h"
+#include "rutils/process.h"
 #include "rutils/debug.h"
 
 #include <assert.h>
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     {
       DestroySocket(sockfd);	/* Forked process doesn't care about
 				   new connections */
-      if (SendData(connfd, "Hello, world!", 13) == -1)
+      if (TCPSendData(connfd, "Hello, world!", 13) == -1)
       {
         perror("send");
       }

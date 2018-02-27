@@ -1,6 +1,6 @@
 #define _XOPEN_SOURCE 1000
 
-#include "rnetwork.h"
+#include "network.h"
 #include <stdio.h>
 
 #include <arpa/inet.h>
@@ -78,7 +78,7 @@ Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **give
     servInfo = givenServInfo;
   }
   int rv;
-  if ((rv = GetAddrInfo(SERVER, TCP,  name, port, servInfo))
+  if ((rv = GetAddrInfo(CLIENT, TCP,  name, port, servInfo))
       != 0)
   {
     fprintf(stderr, "%s\n", GaiError(rv));
@@ -93,6 +93,21 @@ Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **give
   return sockfd;
 }
 
+Socket CreateUDPListenerSocket(const char *port)
+{
+  AddrInfo *servInfo;
+
+  int rv;
+  if((rv = GetAddrInfo(SERVER, SOCK_DGRAM, NULL, port, &servInfo)) != 0)
+  {
+    fprintf(stderr, "%s\n", GaiError(rv));
+    return -1;
+  }
+
+  Socket sockfd = ConnectToSocket(servInfo);
+  DestroyAddrInfo(servInfo);
+  return sockfd;
+}
 
 void *GetInAddr(SockAddr *sa)
 {
@@ -236,12 +251,12 @@ int DestroySocket(Socket sockfd)
   return close(sockfd);
 }
 
-Length SendData(Socket sockfd, const void *buf, size_t len)
+Length TCPSendData(Socket sockfd, const void *buf, size_t len)
 {
   return send(sockfd, buf, len, 0);
 }
 
-Length RecvData(Socket sockfd, void *buf, size_t len, ReadFlags flags)
+Length TCPRecvData(Socket sockfd, void *buf, size_t len, ReadFlags flags)
 {
   return recv(sockfd, buf, len, ReadFlagsToRecvFlags(flags));
 }

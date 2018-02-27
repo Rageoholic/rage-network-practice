@@ -1,7 +1,7 @@
 #ifndef RNETWORK_H
 #define RNETWORK_H
 
-#include "rdef.h"
+#include "def.h"
 
 /* Types and constants */
 
@@ -42,12 +42,13 @@ typedef enum ipver { IPV4, IPV6, NO_SPEC } IpVer;
 
   port: a character representation of the port you wish to bind to
 */
+
 Socket CreateTCPServerSocket(const char *port);
 
 /*
   func: CreateTCPClientSocket
 
-  Connect to an external server
+  Connect to an external server via TCP
 
   args
 
@@ -59,8 +60,19 @@ Socket CreateTCPServerSocket(const char *port);
   locally allocated pointer to an AddrInfo and it will change it to
   point to an actual AddrInfo. Pass NULL if you couldn't give a shit.
 */
+
 Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **givenServInfo);
 
+/*
+  func: CreateUDPListenerSocket
+
+  Create a UDP socket we can listen on for data
+
+  args
+
+  port: a character representation of the port you wish to bind to
+*/
+Socket CreateUDPListenerSocket(const char *port);
 /*
   func: GetAddrInfo
 
@@ -156,8 +168,8 @@ const char *SockAddrToStr(SockAddr *addr, char *dst);
 /*
   func: SendData
 
-  Send a buffer of data over a socket. Returns the length of the data
-  sent or -1 if it fails
+  Send a buffer of data over a TCP socket. Returns the length of the
+  data sent or -1 if it fails
 
   args
 
@@ -168,13 +180,13 @@ const char *SockAddrToStr(SockAddr *addr, char *dst);
   len: length of buf
 */
 
-Length SendData(Socket sockfd, const void *buf, size_t len);
+Length TCPSendData(Socket sockfd, const void *buf, size_t len);
 
 /*
   func: SendData
 
-  Read a buffer of data from a socket. Returns the length of the data
-  read or -1 if it fails
+  Read a buffer of data from a TCP socket. Returns the length of the
+  data read or -1 if it fails
 
   args
 
@@ -187,7 +199,7 @@ Length SendData(Socket sockfd, const void *buf, size_t len);
   flags: Flags we want to set. See ReadFlags for docs on what flags mean
 */
 
-Length RecvData(Socket sockfd, void *buf, size_t len, ReadFlags flags);
+Length TCPRecvData(Socket sockfd, void *buf, size_t len, ReadFlags flags);
 
 /* Accessors */
 
