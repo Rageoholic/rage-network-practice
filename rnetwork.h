@@ -5,6 +5,8 @@
 
 #define MAX_ADDR_STR_LEN 46
 
+typedef FD Socket;
+
 typedef enum
 {
   TCP,
@@ -23,6 +25,10 @@ typedef struct addrinfo AddrInfo;
 
 typedef struct sockaddr_storage SockAddr;
 
+Socket CreateTCPServerSocket(const char *port);
+
+Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **givenServInfo);
+
 void *GetInAddr(SockAddr *sa);
 
 int GetAddrInfo(Role role, ConnType connType, const char *port,
@@ -30,9 +36,9 @@ int GetAddrInfo(Role role, ConnType connType, const char *port,
 
 const char *GaiError(int errcode);
 
-fd BindToAddrInfo(AddrInfo *a, int connBacklog);
+Socket BindToAddrInfo(AddrInfo *a, int connBacklog);
 
-fd ConnectToSocket(AddrInfo *a);
+Socket ConnectToSocket(AddrInfo *a);
 
 AddrInfo *NextAddrInfo(AddrInfo *a);
 
@@ -44,13 +50,13 @@ const char *GetIpStr(AddrInfo *a, char *ipstr, size_t ipstrLength);
 
 void FreeAddrInfo(AddrInfo *a);
 
-fd AcceptConnection(fd sockfd, SockAddr **theirAddr);
+Socket AcceptConnection(Socket sockfd, SockAddr **theirAddr);
 
 const char *SockAddrToStr(SockAddr *addr, char *dst);
 
-int CloseSocket(fd sockfd);
+int CloseSocket(Socket sockfd);
 
-Length SendData(fd sockfd, const void *buf, size_t len, int flags);
+Length SendData(Socket sockfd, const void *buf, size_t len, int flags);
 
-Length ReadData(fd sockfd, void *buf, size_t len, int flags);
+Length ReadData(Socket sockfd, void *buf, size_t len, int flags);
 #endif

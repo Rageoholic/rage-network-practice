@@ -12,11 +12,11 @@ typedef int SignalFlags;
 
 #define SF_RESTART 0x01
 
-typedef const int pid;
+typedef const int PID;
 
 typedef void (*SignalHandler)(int);
 
-pid ForkProcess();
+PID ForkProcess();
 
 int SetSignalHandler(SignalType signum, SignalHandler Handler, SignalFlags saFlags);
 #endif

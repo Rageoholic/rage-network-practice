@@ -21,6 +21,52 @@ local int RoleToAIFlags(Role role)
   }
 }
 
+Socket CreateTCPServerSocket(const char *port)
+{
+  AddrInfo *servInfo;
+
+  int rv;
+  if ((rv = GetAddrInfo(SERVER, TCP,  port, NULL, &servInfo))
+      != 0)
+  {
+    fprintf(stderr, "%s\n", GaiError(rv));
+    return -1;
+  }
+
+  Socket sockfd = BindToAddrInfo(servInfo, 10);
+  FreeAddrInfo(servInfo);
+  return sockfd;
+}
+
+Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **givenServInfo)
+{
+  AddrInfo *altServInfo = NULL;
+
+  AddrInfo **servInfo;
+  if(givenServInfo == NULL)
+  {
+    servInfo = &altServInfo;
+  }
+  else
+  {
+    servInfo = givenServInfo;
+  }
+  int rv;
+  if ((rv = GetAddrInfo(SERVER, TCP,  port, name, servInfo))
+      != 0)
+  {
+    fprintf(stderr, "%s\n", GaiError(rv));
+    return -1;
+  }
+
+  Socket sockfd = ConnectToSocket(*servInfo);
+  if(altServInfo != NULL)
+  {
+    FreeAddrInfo(altServInfo);
+  }
+  return sockfd;
+}
+
 local int ConnTypeToSockType(ConnType connType)
 {
   if(connType == TCP)
@@ -64,7 +110,7 @@ AddrInfo *NextAddrInfo(AddrInfo *a)
   return a->ai_next;
 }
 
-fd BindToAddrInfo(AddrInfo *a, int connBacklog)
+Socket BindToAddrInfo(AddrInfo *a, int connBacklog)
 {
   for(AddrInfo *p = a; p != NULL; p = NextAddrInfo(p))
   {
@@ -100,7 +146,7 @@ fd BindToAddrInfo(AddrInfo *a, int connBacklog)
   return -1;
 }
 
-fd ConnectToSocket(AddrInfo *a)
+Socket ConnectToSocket(AddrInfo *a)
 {
   for (AddrInfo *p = a; p != NULL; p = NextAddrInfo(p)) {
     int sockfd;
@@ -150,9 +196,9 @@ void FreeAddrInfo(AddrInfo *a)
   freeaddrinfo(a);
 }
 
-fd AcceptConnection(fd sockfd, SockAddr **theirAddr)
+Socket AcceptConnection(Socket sockfd, SockAddr **theirAddr)
 {
-  *theirAddr = calloc(sizeof(SockAddr),1);
+  *theirAddr = calloc(1,sizeof(SockAddr));
   socklen_t addrLen = sizeof(SockAddr);
   return accept(sockfd, (struct sockaddr *)*theirAddr, &addrLen);
 }
@@ -163,17 +209,17 @@ const char *SockAddrToStr(SockAddr *addr, char *dst)
                    sizeof(*addr));
 }
 
-int CloseSocket(fd sockfd)
+int CloseSocket(Socket sockfd)
 {
   return close(sockfd);
 }
 
-Length SendData(fd sockfd, const void *buf, size_t len, int flags)
+Length SendData(Socket sockfd, const void *buf, size_t len, int flags)
 {
   return send(sockfd, buf, len, flags);
 }
 
-Length ReadData(fd sockfd, void *buf, size_t len, int flags)
+Length ReadData(Socket sockfd, void *buf, size_t len, int flags)
 {
   return recv(sockfd, buf, len, flags);
 }

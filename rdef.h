@@ -1,7 +1,7 @@
 #ifndef RDEF_H
 #define RDEF_H
 
-typedef const int fd;
+typedef const int FD;
 
 #include <stdint.h>
 #include <stddef.h>

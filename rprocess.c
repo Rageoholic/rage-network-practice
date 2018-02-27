@@ -36,7 +36,7 @@ int SetSignalHandler(SignalType signum, SignalHandler handler,
   return sigaction(SignalTypeToSignal(signum), &sa, NULL);
 }
 
-pid ForkProcess()
+PID ForkProcess()
 {
   return fork();
 }

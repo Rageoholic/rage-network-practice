@@ -27,24 +27,12 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  AddrInfo *servInfo;
-
-  int rv;
-  if ((rv = GetAddrInfo(SERVER, TCP,  argv[1], NULL, &servInfo))
-      != 0)
-  {
-    fprintf(stderr, "%s\n", GaiError(rv));
-    return 2;
-  }
-
-  fd sockfd = BindToAddrInfo(servInfo, 10);
+  Socket sockfd = CreateTCPServerSocket(argv[1]);
   if(sockfd == -1)
   {
-    perror("BindToAddrInfo");
+    perror("server: CreateTCPServerSocket");
     return 2;
   }
-  char s[MAX_ADDR_STR_LEN];
-  printf("bound to %s\n", GetIpStr(servInfo, s, sizeof(s)));
 
   if (SetSignalHandler(SIGNAL_CHILD, SigchildHandler, SF_RESTART) == -1)
   {
@@ -52,12 +40,12 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  FreeAddrInfo(servInfo);
+  puts("server listening for connections");
 
   while (true) {
     SockAddr *theirAddr;
 
-    fd connfd = AcceptConnection(sockfd, &theirAddr);
+    Socket connfd = AcceptConnection(sockfd, &theirAddr);
 
 
     if (connfd == -1)
@@ -71,9 +59,15 @@ int main(int argc, char *argv[])
 
 
     printf("server: connected to %s\n", SockAddrToStr(theirAddr, s));
-    if (!ForkProcess())
+    PID returnPid = ForkProcess();
+    if (returnPid == -1)
     {
-      CloseSocket(sockfd);
+      ERROR("fork failed");
+    }
+    else if(!returnPid)
+    {
+      CloseSocket(sockfd);	/* Forked process doesn't care about
+				   new connections */
       if (SendData(connfd, "Hello, world!", 13, 0) == -1)
       {
         perror("send");
@@ -81,7 +75,7 @@ int main(int argc, char *argv[])
       CloseSocket(connfd);
       exit(0);
     }
-    CloseSocket(connfd); // parent doesn't need this
+    CloseSocket(connfd); 	/* Parent doesn't give two shits about the connection */
   }
   return 0;
 }

@@ -8,15 +8,10 @@ int main(int argc, char *argv[])
     fprintf(stderr, "usage: %s name port\n", argv[0]);
     return 1;
   }
-  int rv;
-  AddrInfo *servInfo;
-  if((rv = GetAddrInfo(CLIENT, TCP,  argv[2], argv[1], &servInfo)) != 0)
-  {
-    fprintf(stderr, "GetAddrInfo: %s\n", GaiError(rv));
-    return 1;
-  }
 
-  fd connfd = ConnectToSocket(servInfo);
+  AddrInfo *servInfo;
+
+  Socket connfd = CreateTCPClientSocket(argv[1], argv[2], &servInfo);
   if(connfd == -1)
   {
     fputs("client: failed to connect", stderr);
@@ -30,7 +25,7 @@ int main(int argc, char *argv[])
 
   char buf[1000];
 
-  int numbytes = ReadData(connfd, buf, sizeof(buf) -1, 0);
+  Length numbytes = ReadData(connfd, buf, sizeof(buf) -1, 0);
 
   if(numbytes == -1)
   {
