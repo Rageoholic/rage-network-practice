@@ -4,6 +4,7 @@
 typedef const int fd;
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define local static
 

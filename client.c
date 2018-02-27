@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
   }
   int rv;
   AddrInfo *servInfo;
-  if((rv = GetAddrInfo(0, SOCK_STREAM, AF_UNSPEC, argv[2], argv[1], &servInfo)) != 0)
+  if((rv = GetAddrInfo(CLIENT, TCP,  argv[2], argv[1], &servInfo)) != 0)
   {
     fprintf(stderr, "GetAddrInfo: %s\n", GaiError(rv));
     return 1;
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     return 2;
   }
 
-  char ipbuf[INET6_ADDRSTRLEN];
+  char ipbuf[MAX_ADDR_STR_LEN];
   printf("client: connecting to %s\n", GetIpStr(servInfo, ipbuf, sizeof(ipbuf)));
 
   FreeAddrInfo(servInfo);

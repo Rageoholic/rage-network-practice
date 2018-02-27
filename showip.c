@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
   AddrInfo *tAddrInfo;
 
   int rv;
-  if ((rv = GetAddrInfo(0, SOCK_STREAM, AF_UNSPEC,NULL, argv[1], &tAddrInfo))
+  if ((rv = GetAddrInfo(0, TCP, NULL, argv[1], &tAddrInfo))
       != 0)
   {
     fprintf(stderr, "%s\n", GaiError(rv));
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     case IPV6: ipver = "IPv6"; break;
     default: ipver = "IPv4"; break;
     }
-    char ipBuffer[INET6_ADDRSTRLEN];
+    char ipBuffer[MAX_ADDR_STR_LEN];
     printf("\t%s: %s\n", ipver, GetIpStr(p, ipBuffer, sizeof(ipBuffer)));
   }
 

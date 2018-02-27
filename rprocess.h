@@ -6,18 +6,17 @@
 typedef enum
 {
   SIGNAL_CHILD
-} signalType;
+} SignalType;
 
-typedef int signalFlags;
+typedef int SignalFlags;
 
 #define SF_RESTART 0x01
 
 typedef const int pid;
 
-typedef void (*signalHandler)(int);
+typedef void (*SignalHandler)(int);
 
 pid ForkProcess();
 
-int SetSignalHandler(signalType signum, signalHandler Handler, signalFlags saFlags);
-#undef _POSIX_C_SOURCE
+int SetSignalHandler(SignalType signum, SignalHandler Handler, SignalFlags saFlags);
 #endif

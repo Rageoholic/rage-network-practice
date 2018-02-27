@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <unistd.h>
 
-local int SignalTypeToSignal(signalType sig)
+local int SignalTypeToSignal(SignalType sig)
 {
   switch(sig)
   {
@@ -16,7 +16,7 @@ local int SignalTypeToSignal(signalType sig)
   return -1;
 }
 
-local int SignalFlagsToSaFlags(signalFlags sigType)
+local int SignalFlagsToSaFlags(SignalFlags sigType)
 {
   int saFlags = 0;
   if(sigType && SF_RESTART)
@@ -26,13 +26,12 @@ local int SignalFlagsToSaFlags(signalFlags sigType)
   return saFlags;
 }
 
-int SetSignalHandler(signalType signum, signalHandler handler,
-                     signalFlags saFlags)
+int SetSignalHandler(SignalType signum, SignalHandler handler,
+                     SignalFlags saFlags)
 {
-  struct sigaction sa = {0};
-
-  sa.sa_handler = handler;
-  sa.sa_flags = SignalFlagsToSaFlags(saFlags);
+  struct sigaction sa = {.sa_handler = handler,
+			 .sa_flags = SignalFlagsToSaFlags(saFlags)
+  };
 
   return sigaction(SignalTypeToSignal(signum), &sa, NULL);
 }

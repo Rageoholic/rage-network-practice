@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
   AddrInfo *servInfo;
 
   int rv;
-  if ((rv = GetAddrInfo(AI_PASSIVE, SOCK_STREAM, AF_UNSPEC, argv[1], NULL, &servInfo))
+  if ((rv = GetAddrInfo(SERVER, TCP,  argv[1], NULL, &servInfo))
       != 0)
   {
     fprintf(stderr, "%s\n", GaiError(rv));
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     perror("BindToAddrInfo");
     return 2;
   }
-  char s[INET6_ADDRSTRLEN];
+  char s[MAX_ADDR_STR_LEN];
   printf("bound to %s\n", GetIpStr(servInfo, s, sizeof(s)));
 
   if (SetSignalHandler(SIGNAL_CHILD, SigchildHandler, SF_RESTART) == -1)
@@ -55,10 +55,9 @@ int main(int argc, char *argv[])
   FreeAddrInfo(servInfo);
 
   while (true) {
-    SockAddrStorage theirAddr = {0};
-    socklen_t sinSize = sizeof(theirAddr);
+    SockAddr *theirAddr;
 
-    fd connfd = AcceptConnection(sockfd, (SockAddr *)&theirAddr, sinSize);
+    fd connfd = AcceptConnection(sockfd, &theirAddr);
 
 
     if (connfd == -1)
@@ -68,10 +67,10 @@ int main(int argc, char *argv[])
       continue;
     }
 
-    char s[INET6_ADDRSTRLEN];
+    char s[MAX_ADDR_STR_LEN];
 
 
-    printf("server: connected to %s\n", SockAddrToStr(&theirAddr, s));
+    printf("server: connected to %s\n", SockAddrToStr(theirAddr, s));
     if (!ForkProcess())
     {
       CloseSocket(sockfd);

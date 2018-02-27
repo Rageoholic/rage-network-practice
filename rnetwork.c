@@ -10,9 +10,31 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+local int RoleToAIFlags(Role role)
+{
+  if(role == SERVER)
+  {
+    return AI_PASSIVE;
+  }else
+  {
+    return 0;
+  }
+}
+
+local int ConnTypeToSockType(ConnType connType)
+{
+  if(connType == TCP)
+  {
+    return SOCK_STREAM;
+  }else
+  {
+    return SOCK_DGRAM;
+  }
+}
+
 void *GetInAddr(SockAddr *sa)
 {
-  if (sa->sa_family == AF_INET)
+  if (((struct sockaddr *)sa)->sa_family == AF_INET)
   {
     return &(((struct sockaddr_in *)sa)->sin_addr);
   }
@@ -22,11 +44,12 @@ void *GetInAddr(SockAddr *sa)
   }
 }
 
-int GetAddrInfo(const int aiFlags, const int aiSocktype, const int aiFamily, const char *port,
+int GetAddrInfo(Role role, ConnType connType, const char *port,
                 const char *name, AddrInfo **res)
 {
-  AddrInfo hints
-      = {.ai_flags = aiFlags, .ai_family = aiFamily, .ai_socktype = aiSocktype};
+  AddrInfo hints = {.ai_flags = RoleToAIFlags(role),
+                    .ai_family = AF_UNSPEC,
+                    .ai_socktype = ConnTypeToSockType(connType)};
 
   return getaddrinfo(name, port, &hints, res);
 }
@@ -127,12 +150,14 @@ void FreeAddrInfo(AddrInfo *a)
   freeaddrinfo(a);
 }
 
-fd AcceptConnection(fd sockfd, SockAddr *theirAddr, socklen_t addrLen)
+fd AcceptConnection(fd sockfd, SockAddr **theirAddr)
 {
-  return accept(sockfd, theirAddr, &addrLen);
+  *theirAddr = calloc(sizeof(SockAddr),1);
+  socklen_t addrLen = sizeof(SockAddr);
+  return accept(sockfd, (struct sockaddr *)*theirAddr, &addrLen);
 }
 
-const char *SockAddrToStr(SockAddrStorage *addr, char *dst)
+const char *SockAddrToStr(SockAddr *addr, char *dst)
 {
   return inet_ntop(addr->ss_family, GetInAddr((SockAddr *)addr), dst,
                    sizeof(*addr));
@@ -143,12 +168,12 @@ int CloseSocket(fd sockfd)
   return close(sockfd);
 }
 
-ssize_t SendData(fd sockfd, const void *buf, size_t len, int flags)
+Length SendData(fd sockfd, const void *buf, size_t len, int flags)
 {
   return send(sockfd, buf, len, flags);
 }
 
-ssize_t ReadData(fd sockfd, void *buf, size_t len, int flags)
+Length ReadData(fd sockfd, void *buf, size_t len, int flags)
 {
   return recv(sockfd, buf, len, flags);
 }
