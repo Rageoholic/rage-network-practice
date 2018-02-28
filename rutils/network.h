@@ -11,21 +11,27 @@ typedef FD Socket;
 
 typedef enum
 {
-  TCP,
-  UDP
-}ConnType;
+  TCP,				/* Safe guaranteed transfer */
+  UDP				/* Unsafe non-guaranteed transfer */
+} ConnType;
 
 typedef enum
 {
   SERVER,
   CLIENT
-}Role;
+} Role;
 
 typedef int64_t Length;
 
-typedef struct addrinfo AddrInfo;
+typedef struct addrinfo _AddrInfo, *AddrInfo;
 
-typedef struct sockaddr_storage SockAddr;
+typedef struct sockaddr _SockAddr;
+
+typedef struct len_with_sockaddr
+{
+  _SockAddr *_s;
+  size_t _len;
+}SockAddr;
 
 typedef enum ipver { IPV4, IPV6, NO_SPEC } IpVer;
 
@@ -43,7 +49,7 @@ typedef enum ipver { IPV4, IPV6, NO_SPEC } IpVer;
   port: a character representation of the port you wish to bind to
 */
 
-Socket CreateTCPServerSocket(const char *port);
+Socket CreateTCPServerSocket(const char *port, int connBacklog);
 
 /*
   func: CreateTCPClientSocket
@@ -61,7 +67,7 @@ Socket CreateTCPServerSocket(const char *port);
   point to an actual AddrInfo. Pass NULL if you couldn't give a shit.
 */
 
-Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **givenServInfo);
+Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo *givenServInfo);
 
 /*
   func: CreateUDPListenerSocket
@@ -73,6 +79,23 @@ Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **give
   port: a character representation of the port you wish to bind to
 */
 Socket CreateUDPListenerSocket(const char *port);
+
+/*
+  func: CreateUDPTalkerSocket
+
+  Create a UDP socket we can use to connect externally
+
+  args
+
+  name: host name for the server
+
+  port: string rep of port to connect to
+
+  servInfo: A pointer to fill out with the pointer to our AddrInfos
+  WARNING: Cannot be NULL. If its NULL you can't send data
+*/
+Socket CreateUDPTalkerSocket(const char *name, const char *port,
+			     SockAddr *theirAddr);
 /*
   func: GetAddrInfo
 
@@ -95,7 +118,7 @@ Socket CreateUDPListenerSocket(const char *port);
 */
 
 int GetAddrInfo(Role role, ConnType connType, const char *name,
-                const char *port, AddrInfo **res);
+                const char *port, AddrInfo *res);
 
 /*
   func: GaiError
@@ -121,7 +144,7 @@ const char *GaiError(int errcode);
   connBacklog: The maximum length of the listen queue
 */
 
-Socket BindToAddrInfo(AddrInfo *a, int connBacklog);
+Socket BindToAddrInfo(AddrInfo a);
 
 /*
   func: ConnectToSocket
@@ -133,7 +156,9 @@ Socket BindToAddrInfo(AddrInfo *a, int connBacklog);
   a: AddrInfo to connect to
 */
 
-Socket ConnectToSocket(AddrInfo *a);
+int ListenToTCPSocket(Socket sockfd, int connBacklog);
+
+Socket ConnectToTCPSocket(AddrInfo a);
 
 /*
   func: AcceptConnection
@@ -148,7 +173,7 @@ Socket ConnectToSocket(AddrInfo *a);
   this points with a pointer to their SockAddr
 */
 
-Socket AcceptConnection(Socket sockfd, SockAddr **theirAddr);
+Socket AcceptConnection(Socket sockfd, SockAddr *theirAddr);
 
 /*
   func: SockAddrToStr
@@ -166,7 +191,7 @@ Socket AcceptConnection(Socket sockfd, SockAddr **theirAddr);
 const char *SockAddrToStr(SockAddr *addr, char *dst);
 
 /*
-  func: SendData
+  func: TCPSendData
 
   Send a buffer of data over a TCP socket. Returns the length of the
   data sent or -1 if it fails
@@ -183,7 +208,7 @@ const char *SockAddrToStr(SockAddr *addr, char *dst);
 Length TCPSendData(Socket sockfd, const void *buf, size_t len);
 
 /*
-  func: SendData
+  func: TCPRecvData
 
   Read a buffer of data from a TCP socket. Returns the length of the
   data read or -1 if it fails
@@ -201,18 +226,65 @@ Length TCPSendData(Socket sockfd, const void *buf, size_t len);
 
 Length TCPRecvData(Socket sockfd, void *buf, size_t len, ReadFlags flags);
 
+/*
+  func: UDPSendData
+
+  Send a buffer of data over a UDP socket. Returns the length of the
+  data sent or -1 if it fails
+
+  args
+
+  sockfd: Socket to send data over
+
+  buf: data to send
+
+  len: length of buf
+
+  theirAddr: An AddrInfo giving the SockAddr of the server to connect to
+*/
+
+Length UDPSendData(Socket sockfd, const void *buf, size_t len,
+                   SockAddr *theirAddr);
+
+/*
+  func: UDPRecvData
+
+  Recieve a buffer of date over a UDP data. Returns the length of the
+  data sent or -1 if it fails
+
+  args
+
+  sockfd: socket to recieve data over
+
+  buf: Buffer of data to fill out
+
+  len: length of buf
+
+  flags: set of read flags. See ReedFlags docs
+
+  theirAddr: A pointer to a SockAddr to fill with data
+*/
+
+Length UDPRecvData(Socket sockfd, void *buf, size_t len, ReadFlags flags,
+                   SockAddr *theirAddr);
+
+
 /* Accessors */
 
-AddrInfo *NextAddrInfo(AddrInfo *a);
+AddrInfo NextAddrInfo(AddrInfo a);
 
-IpVer GetIpVer(AddrInfo *a);
+IpVer GetIpVer(AddrInfo a);
 
-const char *GetIpStr(AddrInfo *a, char *ipstr, size_t ipstrLength);
+const char *GetIpStr(AddrInfo a, char *ipstr, size_t ipstrLength);
+
+void PrintError(char *errstr);
 
 /* Destructors */
-void DestroyAddrInfo(AddrInfo *a);
+void DestroyAddrInfo(AddrInfo a);
 
-void DestroySockAddr(SockAddr *s);
+void DestroySockAddr(SockAddr s);
 
 int DestroySocket(Socket sockfd);
+
+
 #endif

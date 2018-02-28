@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  Socket sockfd = CreateTCPServerSocket(argv[1]);
+  Socket sockfd = CreateTCPServerSocket(argv[1], 10);
   if(sockfd == -1)
   {
     perror("server: CreateTCPServerSocket");
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   puts("server listening for connections");
 
   while (true) {
-    SockAddr *theirAddr;
+    SockAddr theirAddr;
 
     Socket connfd = AcceptConnection(sockfd, &theirAddr);
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     char s[MAX_ADDR_STR_LEN];
 
 
-    printf("server: connected to %s\n", SockAddrToStr(theirAddr, s));
+    printf("server: connected to %s\n", SockAddrToStr(&theirAddr, s));
 
     DestroySockAddr(theirAddr);
     PID returnPid = ForkProcess();

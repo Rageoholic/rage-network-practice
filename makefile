@@ -1,4 +1,4 @@
-PROGS = showip server client listener
+PROGS = showip server client listener talker
 
 _RUTILS = network process
 RUTILS_DIR= rutils/
@@ -9,8 +9,8 @@ CFLAGS = $(WARNINGS) --std=c11 -MD -MP
 DEPS = $(shell find . -name "*.d")
 
 ifeq ($(mode),release)
-	CFLAGS := -O2 -g $(CFLAGS) -DNDEBUG
-	LDFLAGS := -O2 -g
+	CFLAGS := -O2 -g $(CFLAGS) -DNDEBUG -flto
+	LDFLAGS := -O2 -g -flto
 else
 ifeq ($(mode),debug)
 
@@ -18,8 +18,8 @@ ifeq ($(mode),debug)
 	LDFLAGS := -O0 -g
 else
 	mode = debugOpt
-	CFLAGS := -g -O2 $(CFLAGS) -DDEBUG
-	LDFLAGS := -O2 -g
+	CFLAGS := -g -O2 $(CFLAGS) -DDEBUG -flto
+	LDFLAGS := -O2 -g -flto
 endif
 endif
 
@@ -38,6 +38,8 @@ server: server.o rutils.a
 client: client.o rutils.a
 
 listener: listener.o rutils.a
+
+talker: talker.o rutils.a
 
 %.o: %.c
 	$(CC) -c $< -o  $@ $(CFLAGS) -MD -MP

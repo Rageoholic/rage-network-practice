@@ -9,6 +9,11 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
+
+#include <assert.h>
+
+#define SOCKADDR_LENGTH_DEFAULT sizeof(struct sockaddr_storage)
 
 local int ReadFlagsToRecvFlags(ReadFlags flags)
 {
@@ -46,10 +51,47 @@ local int ConnTypeToSockType(ConnType connType)
   }
 }
 
-
-Socket CreateTCPServerSocket(const char *port)
+local void *GetInAddr(_SockAddr *sa)
 {
-  AddrInfo *servInfo;
+  assert(sa != NULL);
+  if (((struct sockaddr *)sa)->sa_family == AF_INET)
+  {
+    return &(((struct sockaddr_in *)sa)->sin_addr);
+  }
+  else
+  {
+    return &(((struct sockaddr_in6 *)sa)->sin6_addr);
+  }
+}
+
+typedef struct
+{
+  Socket s;
+  AddrInfo p;
+} AITSTuple;
+
+local AITSTuple AddrInfoToSocket(AddrInfo a)
+{
+
+  for (AddrInfo p = a; p != NULL; p = NextAddrInfo(p)) {
+    int sockfd;
+    if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
+    {
+
+      perror("AddrInfoToSocket: socket");
+      continue;
+
+    }
+    AITSTuple ret = {sockfd, p};
+    return ret;
+  }
+  AITSTuple ret = {-1, NULL};
+  return ret;
+}
+
+Socket CreateTCPServerSocket(const char *port, int connBacklog)
+{
+  AddrInfo servInfo;
 
   int rv;
   if ((rv = GetAddrInfo(SERVER, TCP,  NULL, port, &servInfo))
@@ -59,16 +101,29 @@ Socket CreateTCPServerSocket(const char *port)
     return -1;
   }
 
-  Socket sockfd = BindToAddrInfo(servInfo, 10);
+  Socket sockfd = BindToAddrInfo(servInfo);
+  if(sockfd == -1)
+  {
+    return -1;
+  }
   DestroyAddrInfo(servInfo);
+
+  if(ListenToTCPSocket(sockfd, connBacklog) == -1)
+  {
+    perror("CreateTCPServerSocket: ListenToTCPSocket");
+    DestroySocket(sockfd);
+    return -1;
+  }
+
+
   return sockfd;
 }
 
-Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **givenServInfo)
+Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo *givenServInfo)
 {
-  AddrInfo *altServInfo = NULL;
+  AddrInfo altServInfo = NULL;
 
-  AddrInfo **servInfo;
+  AddrInfo *servInfo;
   if(givenServInfo == NULL)
   {
     servInfo = &altServInfo;
@@ -85,7 +140,7 @@ Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **give
     return -1;
   }
 
-  Socket sockfd = ConnectToSocket(*servInfo);
+  Socket sockfd = ConnectToTCPSocket(*servInfo);
   if(altServInfo != NULL)
   {
     DestroyAddrInfo(altServInfo);
@@ -95,7 +150,7 @@ Socket CreateTCPClientSocket(const char *name, const char *port, AddrInfo **give
 
 Socket CreateUDPListenerSocket(const char *port)
 {
-  AddrInfo *servInfo;
+  AddrInfo servInfo;
 
   int rv;
   if((rv = GetAddrInfo(SERVER, SOCK_DGRAM, NULL, port, &servInfo)) != 0)
@@ -104,27 +159,39 @@ Socket CreateUDPListenerSocket(const char *port)
     return -1;
   }
 
-  Socket sockfd = ConnectToSocket(servInfo);
+  Socket sockfd = BindToAddrInfo(servInfo);
   DestroyAddrInfo(servInfo);
   return sockfd;
 }
 
-void *GetInAddr(SockAddr *sa)
+Socket CreateUDPTalkerSocket(const char *name, const char *port,
+                             SockAddr *theirAddr)
 {
-  if (((struct sockaddr *)sa)->sa_family == AF_INET)
+  assert(theirAddr != NULL);
+
+  AddrInfo servInfo;
+  int rv;
+  if((rv = GetAddrInfo(CLIENT, SOCK_DGRAM, name, port, &servInfo)) != 0)
   {
-    return &(((struct sockaddr_in *)sa)->sin_addr);
+    fprintf(stderr, "%s\n", GaiError(rv));
+    return -1;
   }
-  else
-  {
-    return &(((struct sockaddr_in6 *)sa)->sin6_addr);
-  }
+
+  AITSTuple udpconn = AddrInfoToSocket(servInfo);
+
+  theirAddr->_len = udpconn.p->ai_addrlen;
+  theirAddr->_s = malloc(theirAddr->_len);
+  memcpy(theirAddr->_s, udpconn.p->ai_addr, theirAddr->_len);
+
+  DestroyAddrInfo(servInfo);
+  return udpconn.s;
 }
 
+
 int GetAddrInfo(Role role, ConnType connType, const char *name,
-                const char *port, AddrInfo **res)
+                const char *port, AddrInfo *res)
 {
-  AddrInfo hints = {.ai_flags = RoleToAIFlags(role),
+  _AddrInfo hints = {.ai_flags = RoleToAIFlags(role),
                     .ai_family = AF_UNSPEC,
                     .ai_socktype = ConnTypeToSockType(connType)};
 
@@ -136,14 +203,14 @@ const char *GaiError(int errcode)
   return gai_strerror(errcode);
 }
 
-AddrInfo *NextAddrInfo(AddrInfo *a)
+AddrInfo NextAddrInfo(AddrInfo a)
 {
   return a->ai_next;
 }
 
-Socket BindToAddrInfo(AddrInfo *a, int connBacklog)
+Socket BindToAddrInfo(AddrInfo a)
 {
-  for(AddrInfo *p = a; p != NULL; p = NextAddrInfo(p))
+  for(AddrInfo p = a; p != NULL; p = NextAddrInfo(p))
   {
     int sockfd;
     if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
@@ -165,21 +232,27 @@ Socket BindToAddrInfo(AddrInfo *a, int connBacklog)
       continue;
     }
 
-    if(listen(sockfd, connBacklog) == -1)
-    {
-      perror("listen");
-      close(sockfd);
-      continue;
-    }
+
     return sockfd;
   }
   /* Error case */
   return -1;
 }
 
-Socket ConnectToSocket(AddrInfo *a)
+int ListenToTCPSocket(Socket sockfd, int connBacklog)
 {
-  for (AddrInfo *p = a; p != NULL; p = NextAddrInfo(p)) {
+  if(listen(sockfd, connBacklog) == -1)
+  {
+    return -1;
+  }else
+  {
+    return 0;
+  }
+}
+
+Socket ConnectToTCPSocket(AddrInfo a)
+{
+  for (AddrInfo p = a; p != NULL; p = NextAddrInfo(p)) {
     int sockfd;
     if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
     {
@@ -199,12 +272,14 @@ Socket ConnectToSocket(AddrInfo *a)
   return -1;
 }
 
-IpVer GetIpVer(AddrInfo *a)
+
+
+IpVer GetIpVer(AddrInfo a)
 {
   return (a->ai_family == AF_INET) ? IPV4 : IPV6;
 }
 
-const char *GetIpStr(AddrInfo *a, char *ipstr, size_t ipstrLength)
+const char *GetIpStr(AddrInfo a, char *ipstr, size_t ipstrLength)
 {
   void *addr;
 
@@ -222,28 +297,27 @@ const char *GetIpStr(AddrInfo *a, char *ipstr, size_t ipstrLength)
   return inet_ntop(a->ai_family, addr, ipstr, ipstrLength);
 }
 
-void DestroyAddrInfo(AddrInfo *a)
+void DestroyAddrInfo(AddrInfo a)
 {
   freeaddrinfo(a);
 }
 
-Socket AcceptConnection(Socket sockfd, SockAddr **theirAddr)
+Socket AcceptConnection(Socket sockfd, SockAddr *theirAddr)
 {
-  SockAddr *lTheirAddr = NULL;
-
+  _SockAddr *lTheirAddr = NULL;
   if(theirAddr != NULL)
   {
-    *theirAddr = malloc(sizeof(SockAddr));
-    lTheirAddr = *theirAddr;
+    theirAddr->_s = malloc(SOCKADDR_LENGTH_DEFAULT);
+    lTheirAddr = theirAddr->_s;
   }
-  socklen_t addrLen = sizeof(SockAddr);
-  return accept(sockfd, (struct sockaddr *)lTheirAddr, &addrLen);
+  socklen_t addrLen = theirAddr ? SOCKADDR_LENGTH_DEFAULT : 0;
+  return accept(sockfd, lTheirAddr, &addrLen);
 }
 
 const char *SockAddrToStr(SockAddr *addr, char *dst)
 {
-  return inet_ntop(addr->ss_family, GetInAddr((SockAddr *)addr), dst,
-                   sizeof(*addr));
+  return inet_ntop(((struct sockaddr_storage *)addr->_s)->ss_family, GetInAddr(addr->_s), dst,
+                   addr->_len);
 }
 
 int DestroySocket(Socket sockfd)
@@ -261,7 +335,37 @@ Length TCPRecvData(Socket sockfd, void *buf, size_t len, ReadFlags flags)
   return recv(sockfd, buf, len, ReadFlagsToRecvFlags(flags));
 }
 
-void DestroySockAddr(SockAddr *s)
+Length UDPRecvData(Socket sockfd, void *buf, size_t len, ReadFlags flags,
+                   SockAddr *theirAddr)
 {
-  free(s);
+  SockAddr lTheirAddr;
+
+  lTheirAddr._s = malloc(sizeof (struct sockaddr_storage));
+
+  lTheirAddr._len = sizeof(struct sockaddr_storage);
+
+  if(theirAddr != NULL)
+  {
+    *theirAddr = lTheirAddr;
+  }else
+  {
+    free(lTheirAddr._s);
+  }
+  socklen_t socklen = lTheirAddr._len;
+  return recvfrom(sockfd, buf, len, flags, lTheirAddr._s, &socklen);
+}
+
+Length UDPSendData(Socket sockfd, const void *buf, size_t len, SockAddr *s)
+{
+  return sendto(sockfd, buf, len, 0, s->_s, s->_len);
+}
+
+void PrintError(char *error)
+{
+  perror(error);
+}
+
+void DestroySockAddr(SockAddr s)
+{
+  free(s._s);
 }

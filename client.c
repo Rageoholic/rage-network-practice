@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  AddrInfo *servInfo;
+  AddrInfo servInfo;
 
   Socket connfd = CreateTCPClientSocket(argv[1], argv[2], &servInfo);
   if(connfd == -1)

@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  AddrInfo *tAddrInfo;
+  AddrInfo tAddrInfo;
 
   int rv;
   if ((rv = GetAddrInfo(0, TCP, argv[1], NULL, &tAddrInfo))
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 
   printf("IP addresses for %s\n", argv[1]);
 
-  for (AddrInfo *p = tAddrInfo; p != NULL; p = NextAddrInfo(p)) {
+  for (AddrInfo p = tAddrInfo; p != NULL; p = NextAddrInfo(p)) {
     char *ipver;
 
     switch (GetIpVer(p))
