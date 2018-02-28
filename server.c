@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 				   new connections */
       if (TCPSendData(connfd, "Hello, world!", 13) == -1)
       {
-        perror("send");
+        PrintError("send");
       }
       DestroySocket(connfd);
       exit(0);
