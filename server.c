@@ -1,20 +1,19 @@
+#include "rutils/debug.h"
 #include "rutils/network.h"
 #include "rutils/process.h"
-#include "rutils/debug.h"
 
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/wait.h>
 
 local void SigchildHandler(int s)
 {
   ignore s;
   int saved_errno = errno;
-  while (waitpid(-1, NULL, WNOHANG) > 0)
-    ;
+  while (GetPIDStatus(-1).pid > 0) {
+  }
 
   errno = saved_errno;
 }
@@ -27,36 +26,38 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  Socket sockfd = CreateTCPServerSocket(argv[1], 10);
-  if(sockfd == -1)
+  Socket sock = CreateTCPServerSocket(argv[1], 10);
+  if (IsValidSocket(sock))
   {
-    perror("server: CreateTCPServerSocket");
+    PrintError("server: CreateTCPServerSocket");
     return 2;
   }
 
+  /* We need to set up a signal handler for SigChild in order to clean
+     up our child processes TODO: We probably need a better interface
+     for this? This seems shitty. Also implementing it on windows
+     couldn't hurt*/
   if (SetSignalHandler(SIGNAL_CHILD, SigchildHandler, SF_RESTART) == -1)
   {
-    perror("SetSignalHandler");
+    PrintError("SetSignalHandler");
     return 1;
   }
 
   puts("server listening for connections");
 
   while (true) {
-    SockAddr theirAddr;
+    SockAddr theirAddr = {};
 
-    Socket connfd = AcceptConnection(sockfd, &theirAddr);
+    Socket conn = AcceptConnection(sock, &theirAddr);
 
-
-    if (connfd == -1)
+    assert(theirAddr._s != NULL);
+    if (IsValidSocket(conn))
     {
-      perror("AcceptConnection");
-      ERROR("invalid fd (goddamnit)")
+      PrintError("AcceptConnection");
       continue;
     }
 
     char s[MAX_ADDR_STR_LEN];
-
 
     printf("server: connected to %s\n", SockAddrToStr(&theirAddr, s));
 
@@ -66,19 +67,19 @@ int main(int argc, char *argv[])
     {
       ERROR("fork failed");
     }
-    else if(!returnPid)
+    else if (!returnPid)
     {
-      DestroySocket(sockfd);	/* Forked process doesn't care about
-				   new connections */
-      if (TCPSendData(connfd, "Hello, world!", 13) == -1)
+      DestroySocket(sock); /* Forked process doesn't care about new
+                              connections */
+      if (TCPSendData(conn, "Hello, world!", 13) == -1)
       {
         PrintError("send");
       }
-      DestroySocket(connfd);
+      DestroySocket(conn);
       exit(0);
     }
-    DestroySocket(connfd); 	/* Parent doesn't give two shits about
-				   the external connection */
+    DestroySocket(conn); /* Parent doesn't give two shits about the
+                            external connection */
   }
   return 0;
 }

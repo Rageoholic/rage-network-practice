@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 
-
 int main(int argc, char *argv[])
 {
 
@@ -18,14 +17,13 @@ int main(int argc, char *argv[])
   AddrInfo tAddrInfo;
 
   int rv;
-  if ((rv = GetAddrInfo(0, TCP, argv[1], NULL, &tAddrInfo))
-      != 0)
+  if ((rv = GetAddrInfo(0, TCP, argv[1], NULL, &tAddrInfo)) != 0)
   {
     fprintf(stderr, "%s\n", GaiError(rv));
     return 2;
   }
 
-  printf("IP addresses for %s\n", argv[1]);
+  printf("IP addresses for %s\n\n", argv[1]);
 
   for (AddrInfo p = tAddrInfo; p != NULL; p = NextAddrInfo(p)) {
     char *ipver;
@@ -36,7 +34,7 @@ int main(int argc, char *argv[])
     default: ipver = "IPv4"; break;
     }
     char ipBuffer[MAX_ADDR_STR_LEN];
-    printf("\t%s: %s\n", ipver, GetIpStr(p, ipBuffer, sizeof(ipBuffer)));
+    printf("\t%s: %s\n\n", ipver, GetIpStr(p, ipBuffer, sizeof(ipBuffer)));
   }
 
   DestroyAddrInfo(tAddrInfo);

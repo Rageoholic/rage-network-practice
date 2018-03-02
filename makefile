@@ -2,10 +2,15 @@ PROGS = showip server client listener talker
 
 _RUTILS = network process
 RUTILS_DIR= rutils/
-RUTILS = $(patsubst %,$(RUTILS_DIR)%.o, $(_RUTILS))
 
-WARNINGS = -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-parameter -Wno-missing-field-initializers -Wno-ignored-qualifiers
-CFLAGS = $(WARNINGS) --std=c11 -MD -MP
+# TODO: Come up with actual ways to set these properly (shell script?)
+PLATFORM = LINUX
+
+ARCHITECTURE = X86_64
+
+
+WARNINGS = -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-parameter -Wno-missing-field-initializers
+BASECFLAGS = $(WARNINGS) --std=c11 -MD -MP -D$(PLATFORM) -D$(ARCHITECTURE)
 DEPS = $(shell find . -name "*.d")
 
 
@@ -13,21 +18,19 @@ default: debug-opt
 
 all: $(PROGS)
 
-debug: CFLAGS += -O0 -g
-debug:
+debug: CFLAGS = -O0 -g $(BASECFLAGS)
+debug: all
 
-debug-opt: CFLAGS += -O2 -g -flto
-debug-opt: LDFLAGS += -flto -O2 -g
+debug-opt: CFLAGS = -O2 -g -flto $(BASECFLAGS)
+debug-opt: LDFLAGS += -flto -O2 -g $(BASECFLAGS)
 debug-opt: all
 
 release: CFLAGS += -DNDEBUG
 release: debug-opt
 
 -include $(DEPS)
+-include rutils/rutils.mk
 
-rutils.a: $(RUTILS)
-	$(AR) rcs $@ $^
-	ranlib $@
 
 showip: showip.o rutils.a
 
@@ -39,8 +42,6 @@ listener: listener.o rutils.a
 
 talker: talker.o rutils.a
 
-%.o: %.c
-	$(CC) -c $< -o  $@ $(CFLAGS) -MD -MP
 
 clean:
 	-$(RM) -f *.o *.d server
