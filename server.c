@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
   }
 
   Socket sock = CreateTCPServerSocket(argv[1], 10);
-  if (IsValidSocket(sock))
+  if (!IsValidSocket(sock))
   {
     PrintError("server: CreateTCPServerSocket");
     return 2;
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     Socket conn = AcceptConnection(sock, &theirAddr);
 
     assert(theirAddr._s != NULL);
-    if (IsValidSocket(conn))
+    if (!IsValidSocket(conn))
     {
       PrintError("AcceptConnection");
       continue;

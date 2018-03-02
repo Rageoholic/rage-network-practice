@@ -14,7 +14,7 @@ int main(int argc, char **argv)
   SockAddr theirAddr = {};
   Socket tsock = CreateUDPTalkerSocket(argv[1], argv[2], &theirAddr);
 
-  if (IsValidSocket(tsock))
+  if (!IsValidSocket(tsock))
   {
     PrintError("talker");
     return 2;

@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 
   Socket lSock = CreateUDPListenerSocket(argv[1]);
 
-  if (IsValidSocket(lSock))
+  if (!IsValidSocket(lSock))
   {
     fputs("listener: failed to bind", stderr);
     return 2;

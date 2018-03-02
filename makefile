@@ -9,12 +9,18 @@ PLATFORM = LINUX
 ARCHITECTURE = X86_64
 
 
-WARNINGS = -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-parameter -Wno-missing-field-initializers
-BASECFLAGS = $(WARNINGS) --std=c11 -MD -MP -D$(PLATFORM) -D$(ARCHITECTURE)
+WARNINGS = -Wall -Wextra -Werror -Wno-error=unused-variable	\
+-Wno-error=unused-parameter -Wno-missing-field-initializers
+BASECFLAGS = $(WARNINGS) --std=c99 -MD -MP -D$(PLATFORM) -D$(ARCHITECTURE)
 DEPS = $(shell find . -name "*.d")
 
 
 default: debug-opt
+
+-include $(DEPS)
+-include rutils/rutils.mk
+
+-include .user.mk		#User defined includes. Use this to configure specific settings on build files
 
 all: $(PROGS)
 
@@ -28,8 +34,6 @@ debug-opt: all
 release: CFLAGS += -DNDEBUG
 release: debug-opt
 
--include $(DEPS)
--include rutils/rutils.mk
 
 
 showip: showip.o rutils.a

@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
   AddrInfo servInfo;
 
   Socket conn = CreateTCPClientSocket(argv[1], argv[2], &servInfo);
-  if (IsValidSocket(conn))
+  if (!IsValidSocket(conn))
   {
     fputs("client: failed to connect", stderr);
     return 2;
