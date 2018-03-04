@@ -46,11 +46,7 @@ listener: listener.o rutils.a
 
 talker: talker.o rutils.a
 
-
 clean:
 	-$(RM) -f *.o *.d server
-
-info:
-	@echo building $(PROGS) $(RUTILS)
 
 .PHONY: all clean info debug debug-opt release default

@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 
   char buf[1000];
 
-  SockAddr theirAddr;
+  SockAddr theirAddr = {};
   Length l = UDPRecvData(lSock, buf, sizeof(buf) - 1, 0, &theirAddr);
 
   if (l == -1)
