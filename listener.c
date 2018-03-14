@@ -10,9 +10,9 @@ int main(int argc, char **argv)
     return 2;
   }
 
-  Socket lSock = CreateUDPListenerSocket(argv[1]);
+  UDPListenerSocket lSock = CreateUDPListenerSocket(argv[1]);
 
-  if (!IsValidSocket(lSock))
+  if (!IsValidUDPListenerSocket(lSock))
   {
     fputs("listener: failed to bind", stderr);
     return 2;
@@ -40,5 +40,5 @@ int main(int argc, char **argv)
 
   DestroySockAddr(theirAddr);
 
-  DestroySocket(lSock);
+  DestroyUDPListenerSocket(lSock);
 }

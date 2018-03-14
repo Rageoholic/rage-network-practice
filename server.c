@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  Socket sock = CreateTCPServerSocket(argv[1], 10);
-  if (!IsValidSocket(sock))
+  TCPSocket sock = CreateTCPServerSocket(argv[1], 10);
+  if (!IsValidTCPSocket(sock))
   {
     PrintError("server: CreateTCPServerSocket");
     return 2;
@@ -48,10 +48,10 @@ int main(int argc, char *argv[])
   while (true) {
     SockAddr theirAddr = {};
 
-    Socket conn = AcceptConnection(sock, &theirAddr);
+    TCPSocket conn = AcceptConnection(sock, &theirAddr);
 
     assert(theirAddr._s != NULL);
-    if (!IsValidSocket(conn))
+    if (!IsValidTCPSocket(conn))
     {
       PrintError("AcceptConnection");
       continue;
@@ -69,16 +69,16 @@ int main(int argc, char *argv[])
     }
     else if (!returnPid)
     {
-      DestroySocket(sock); /* Forked process doesn't care about new
+      DestroySocket(sock._s); /* Forked process doesn't care about new
                               connections */
       if (TCPSendData(conn, "Hello, world!", 13) == -1)
       {
         PrintError("send");
       }
-      DestroySocket(conn);
+      DestroyTCPSocket(conn);
       exit(0);
     }
-    DestroySocket(conn); /* Parent doesn't give two shits about the
+    DestroyTCPSocket(conn); /* Parent doesn't give two shits about the
                             external connection */
   }
   return 0;

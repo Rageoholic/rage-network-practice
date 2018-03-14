@@ -11,8 +11,8 @@ int main(int argc, char *argv[])
 
   AddrInfo servInfo;
 
-  Socket conn = CreateTCPClientSocket(argv[1], argv[2], &servInfo);
-  if (!IsValidSocket(conn))
+  TCPSocket conn = CreateTCPClientSocket(argv[1], argv[2], &servInfo);
+  if (!IsValidTCPSocket(conn))
   {
     fputs("client: failed to connect", stderr);
     return 2;
@@ -38,5 +38,5 @@ int main(int argc, char *argv[])
 
   printf("client: recieved \"%s\"\n", buf);
 
-  DestroySocket(conn);
+  DestroyTCPSocket(conn);
 }
