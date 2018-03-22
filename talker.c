@@ -5,31 +5,31 @@
 
 int main(int argc, char **argv)
 {
-  if (argc != 4)
-  {
-    fprintf(stderr, "usage: %s host port message\n", argv[0]);
-    return 2;
-  }
+    if (argc != 4)
+    {
+        fprintf(stderr, "usage: %s host port message\n", argv[0]);
+        return 2;
+    }
 
-  SockAddr theirAddr = {};
-  UDPTalkerSocket tsock = CreateUDPTalkerSocket(argv[1], argv[2], &theirAddr);
+    SockAddr theirAddr = {};
+    UDPTalkerSocket tsock = CreateUDPTalkerSocket(argv[1], argv[2], &theirAddr);
 
-  if (!IsValidUDPTalkerSocket(tsock))
-  {
-    PrintError("talker");
-    return 2;
-  }
-  Length msgLen = strlen(argv[3]);
-  Length l = UDPSendData(tsock, argv[3], msgLen, theirAddr);
-  if (l == -1)
-  {
-    PrintError("talker");
-    return 2;
-  }
-  puts("data sent");
+    if (!IsValidSocket(tsock))
+    {
+        PrintError("talker");
+        return 2;
+    }
+    Length msgLen = strlen(argv[3]);
+    Length l = UDPSendData(tsock, argv[3], msgLen, theirAddr);
+    if (l == -1)
+    {
+        PrintError("talker");
+        return 2;
+    }
+    puts("data sent");
 
-  DestroySockAddr(theirAddr);
+    DestroySockAddr(theirAddr);
 
-  DestroyUDPTalkerSocket(tsock);
-  return 0;
+    DestroySocket(tsock);
+    return 0;
 }
