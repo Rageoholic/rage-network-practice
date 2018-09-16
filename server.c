@@ -1,18 +1,23 @@
+#define _POSIX_C_SOURCE 2000000L
+
 #include "rutils/debug.h"
 #include "rutils/network.h"
-#include "rutils/process.h"
 
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 local void SigchildHandler(int s)
 {
     ignore s;
     int saved_errno = errno;
-    while (GetPIDStatus(-1).pid > 0)
+    while (waitpid(-1, NULL, WNOHANG) > 0)
     {
     }
 
@@ -33,12 +38,14 @@ int main(int argc, char *argv[])
         PrintError("server: CreateTCPServerSocket");
         return 2;
     }
+    struct sigaction sa = {.sa_handler = SigchildHandler,
+	                   .sa_flags = SA_RESTART};
 
     /* We need to set up a signal handler for SigChild in order to clean
      up our child processes TODO: We probably need a better interface
      for this? This seems shitty. Also implementing it on windows
      couldn't hurt*/
-    if (SetSignalHandler(SIGNAL_CHILD, SigchildHandler, SF_RESTART) == -1)
+    if (sigaction(SIGCHLD, &sa, NULL) == -1)
     {
         PrintError("SetSignalHandler");
         return 1;
@@ -64,7 +71,8 @@ int main(int argc, char *argv[])
         printf("server: connected to %s\n", SockAddrToStr(&theirAddr, s));
 
         DestroySockAddr(theirAddr);
-        PID returnPid = ForkProcess();
+        int returnPid = fork();
+
         if (returnPid == -1)
         {
             ERROR("fork failed");
@@ -77,6 +85,7 @@ int main(int argc, char *argv[])
             {
                 PrintError("send");
             }
+	    printf("Data sent\n");
             DestroySocket(conn);
             exit(0);
         }

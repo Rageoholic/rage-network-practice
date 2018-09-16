@@ -10,7 +10,8 @@ ARCHITECTURE = X86_64
 
 
 WARNINGS = -Wall -Wextra -Werror -Wno-error=unused-variable	\
--Wno-error=unused-parameter -Wno-missing-field-initializers
+-Wno-error=unused-parameter -Wno-missing-field-initializers	\
+-Wno-unknown-pragmas -Wno-unused-function
 BASECFLAGS = $(WARNINGS) --std=c99 -MD -MP -D$(PLATFORM) -D$(ARCHITECTURE)
 DEPS = $(shell find . -name "*.d")
 
@@ -45,6 +46,8 @@ client: client.o rutils.a
 listener: listener.o rutils.a
 
 talker: talker.o rutils.a
+
+tcp-sent: tcp-sent.o rutils.a
 
 clean:
 	-$(RM) -f *.o *.d server
